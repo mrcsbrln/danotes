@@ -7,6 +7,7 @@ import {
   onSnapshot,
   addDoc,
   updateDoc,
+  deleteDoc,
 } from '@angular/fire/firestore';
 
 @Injectable({
@@ -24,6 +25,14 @@ export class NoteListService {
   constructor() {
     this.unsubNotes = this.subNotesList();
     this.unsubTrash = this.subTrashList();
+  }
+
+  async deleteNote(colId: 'notes'|'trash', docId: string) {
+    try {
+      await deleteDoc(this.getSingleDocRef(colId, docId));
+    } catch (err) {
+      console.error(err);
+    }
   }
 
   async updateNote(note: Note) {
@@ -49,12 +58,10 @@ export class NoteListService {
   getColIdFromNote(note: Note) {
     if (note.type === 'note') {
       return 'notes';
-    } else {
-      return 'trash';
-    }
+    } return 'trash';
   }
 
-  async addNote(item: Note) {
+  async addNote(item: Note, colId: 'notes' | 'trash') {
     try {
       const docRef = await addDoc(this.getNotesRef(), item);
       console.log('Document written with ID:', docRef?.id);
