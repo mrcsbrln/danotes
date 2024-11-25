@@ -8,6 +8,9 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  query,
+  orderBy,
+  limit,
 } from '@angular/fire/firestore';
 
 @Injectable({
@@ -23,11 +26,11 @@ export class NoteListService {
   firestore: Firestore = inject(Firestore);
 
   constructor() {
-    this.unsubNotes = this.subNotesList();
+    this.unsubNotes = this.subNotesList(100);
     this.unsubTrash = this.subTrashList();
   }
 
-  async deleteNote(colId: 'notes'|'trash', docId: string) {
+  async deleteNote(colId: 'notes' | 'trash', docId: string) {
     try {
       await deleteDoc(this.getSingleDocRef(colId, docId));
     } catch (err) {
@@ -58,12 +61,16 @@ export class NoteListService {
   getColIdFromNote(note: Note) {
     if (note.type === 'note') {
       return 'notes';
-    } return 'trash';
+    }
+    return 'trash';
   }
 
   async addNote(item: Note, colId: 'notes' | 'trash') {
     try {
-      const docRef = await addDoc(this.getNotesRef(), item);
+      const docRef = await addDoc(
+        colId === 'notes' ? this.getNotesRef() : this.getTrashRef(),
+        item
+      );
       console.log('Document written with ID:', docRef?.id);
     } catch (err) {
       console.error(err);
@@ -84,8 +91,9 @@ export class NoteListService {
     });
   }
 
-  subNotesList() {
-    return onSnapshot(this.getNotesRef(), (list) => {
+  subNotesList(lim: number) {
+    const q = query(this.getNotesRef(), orderBy('title'),limit(lim));
+    return onSnapshot(q, (list) => {
       this.normalNotes = [];
       list.forEach((element) => {
         this.normalNotes.push(this.setNoteObject(element.data(), element.id));
